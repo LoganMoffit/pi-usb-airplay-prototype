@@ -7,12 +7,17 @@ MOUNT_POINT="${MOUNT_POINT:-/mnt/amp-drive}"
 SIZE_MB="${SIZE_MB:-1024}"
 
 mkdir -p "$IMG_DIR"
-mkdir -p "$MOUNT_POINT"
+sudo mkdir -p "$MOUNT_POINT"
 
 if [[ ! -f "$IMG_FILE" ]]; then
+  MKFS_CMD="$(command -v mkfs.vfat || command -v mkfs.fat || true)"
+  if [[ -z "$MKFS_CMD" ]]; then
+    echo "No FAT formatter found (mkfs.vfat/mkfs.fat). Install dosfstools."
+    exit 1
+  fi
   echo "Creating ${SIZE_MB}MB image: $IMG_FILE"
   dd if=/dev/zero of="$IMG_FILE" bs=1M count="$SIZE_MB" status=progress
-  mkfs.vfat -F 32 -n AMPUSB "$IMG_FILE"
+  sudo "$MKFS_CMD" -F 32 -n AMPUSB "$IMG_FILE"
 else
   echo "Using existing image: $IMG_FILE"
 fi
