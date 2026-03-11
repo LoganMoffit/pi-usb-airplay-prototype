@@ -19,7 +19,24 @@ bash -c "$(curl -fsSL <RAW_BOOTSTRAP_URL>)" -- <REPO_URL>
 This installs dependencies, configures USB gadget boot settings, installs systemd services,
 and reboots automatically.
 
-After reboot, it should run automatically. Check status with:
+During install, you will be prompted to choose:
+
+- `USB DAC` (keep regular shairport-sync ALSA output)
+- `Fake USB thumb-drive bridge` (pipe + ffmpeg + USB gadget)
+
+For non-interactive installs, set mode explicitly:
+
+```bash
+AUDIO_OUTPUT_MODE=usb_dac bash -c "$(curl -fsSL https://raw.githubusercontent.com/LoganMoffit/pi-usb-airplay-prototype/main/bootstrap.sh)" -- https://github.com/LoganMoffit/pi-usb-airplay-prototype.git
+```
+
+or:
+
+```bash
+AUDIO_OUTPUT_MODE=usb_bridge bash -c "$(curl -fsSL https://raw.githubusercontent.com/LoganMoffit/pi-usb-airplay-prototype/main/bootstrap.sh)" -- https://github.com/LoganMoffit/pi-usb-airplay-prototype.git
+```
+
+If you choose bridge mode, after reboot it should run automatically. Check status with:
 
 ```bash
 systemctl status shairport-sync
