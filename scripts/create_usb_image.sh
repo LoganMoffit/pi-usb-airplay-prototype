@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMG_DIR="${IMG_DIR:-/home/pi/usb-amp}"
+IMG_DIR="${IMG_DIR:-$HOME/usb-amp}"
 IMG_FILE="${IMG_FILE:-$IMG_DIR/amp-drive.img}"
 MOUNT_POINT="${MOUNT_POINT:-/mnt/amp-drive}"
 SIZE_MB="${SIZE_MB:-1024}"

@@ -7,6 +7,8 @@ set -euo pipefail
 REPO_DIR="${REPO_DIR:-$HOME/pi-usb-airplay-prototype}"
 AUTO_REBOOT="${AUTO_REBOOT:-1}"
 AUDIO_OUTPUT_MODE="${AUDIO_OUTPUT_MODE:-}"
+USB_IMG_DIR="${USB_IMG_DIR:-$HOME/usb-amp}"
+USB_IMG_FILE="${USB_IMG_FILE:-$USB_IMG_DIR/amp-drive.img}"
 BOOT_CONFIG="/boot/firmware/config.txt"
 BOOT_CMDLINE="/boot/firmware/cmdline.txt"
 if [[ ! -f "$BOOT_CONFIG" ]]; then
@@ -56,6 +58,7 @@ Wants=local-fs.target
 Type=oneshot
 RemainAfterExit=yes
 ExecStart=$REPO_DIR/scripts/setup_usb_gadget.sh start
+Environment=IMG_FILE=$USB_IMG_FILE
 ExecStop=$REPO_DIR/scripts/setup_usb_gadget.sh stop
 TimeoutStartSec=30
 TimeoutStopSec=30
@@ -73,6 +76,7 @@ Requires=shairport-sync.service pi-usb-gadget.service
 [Service]
 Type=simple
 ExecStart=$REPO_DIR/scripts/airplay_to_usb.sh
+Environment=MOUNT_POINT=/mnt/amp-drive
 Restart=always
 RestartSec=2
 
@@ -144,7 +148,7 @@ if [[ "$AUDIO_OUTPUT_MODE" == "usb_bridge" ]]; then
   fi
 
   log "Creating USB image"
-  "$REPO_DIR/scripts/create_usb_image.sh"
+  IMG_DIR="$USB_IMG_DIR" IMG_FILE="$USB_IMG_FILE" "$REPO_DIR/scripts/create_usb_image.sh"
 
   install_bridge_services
 

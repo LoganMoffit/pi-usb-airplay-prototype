@@ -4,7 +4,7 @@ set -euo pipefail
 ACTION="${1:-}"
 G=/sys/kernel/config/usb_gadget/ampusb
 UDC_NAME="$(ls /sys/class/udc | head -n1 || true)"
-IMG_FILE="${IMG_FILE:-/home/pi/usb-amp/amp-drive.img}"
+IMG_FILE="${IMG_FILE:-/home/${SUDO_USER:-$USER}/usb-amp/amp-drive.img}"
 VENDOR="${VENDOR:-0x1d6b}"   # Linux Foundation (prototype only)
 PRODUCT="${PRODUCT:-0x0104}" # Multifunction Composite Gadget
 SERIAL="${SERIAL:-0001}"
