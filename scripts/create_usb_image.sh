@@ -10,7 +10,13 @@ mkdir -p "$IMG_DIR"
 sudo mkdir -p "$MOUNT_POINT"
 
 if [[ ! -f "$IMG_FILE" ]]; then
-  MKFS_CMD="$(command -v mkfs.vfat || command -v mkfs.fat || true)"
+  MKFS_CMD=""
+  for candidate in mkfs.vfat mkfs.fat /sbin/mkfs.vfat /usr/sbin/mkfs.vfat /sbin/mkfs.fat /usr/sbin/mkfs.fat; do
+    if command -v "$candidate" >/dev/null 2>&1 || [[ -x "$candidate" ]]; then
+      MKFS_CMD="$candidate"
+      break
+    fi
+  done
   if [[ -z "$MKFS_CMD" ]]; then
     echo "No FAT formatter found (mkfs.vfat/mkfs.fat). Install dosfstools."
     exit 1
