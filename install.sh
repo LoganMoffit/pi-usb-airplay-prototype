@@ -5,6 +5,7 @@ set -euo pipefail
 # Run as: curl -fsSL <raw-url>/install.sh | bash
 
 REPO_DIR="${REPO_DIR:-$HOME/pi-usb-airplay-prototype}"
+AUTO_REBOOT="${AUTO_REBOOT:-1}"
 BOOT_CONFIG="/boot/firmware/config.txt"
 BOOT_CMDLINE="/boot/firmware/cmdline.txt"
 if [[ ! -f "$BOOT_CONFIG" ]]; then
@@ -48,7 +49,7 @@ fi
 
 log "Adding modules-load=dwc2 to $BOOT_CMDLINE"
 if ! grep -q 'modules-load=dwc2' "$BOOT_CMDLINE"; then
-  sudo sed -i 's/ rootwait\( .*\)*/ rootwait modules-load=dwc2\1/' "$BOOT_CMDLINE" || true
+  sudo sed -i '0,/rootwait/s//rootwait modules-load=dwc2/' "$BOOT_CMDLINE" || true
   if ! grep -q 'modules-load=dwc2' "$BOOT_CMDLINE"; then
     log "Could not auto-edit cmdline safely. Add modules-load=dwc2 manually to the single cmdline line."
   fi
@@ -67,17 +68,64 @@ chmod +x "$REPO_DIR/scripts/"*.sh
 log "Creating USB image"
 "$REPO_DIR/scripts/create_usb_image.sh"
 
-log "Enabling and restarting shairport-sync"
-sudo systemctl enable shairport-sync
+log "Installing systemd services"
+sudo tee /etc/systemd/system/pi-usb-gadget.service >/dev/null <<EOM
+[Unit]
+Description=USB mass storage gadget for amp thumb-drive emulation
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=$REPO_DIR/scripts/setup_usb_gadget.sh start
+ExecStop=$REPO_DIR/scripts/setup_usb_gadget.sh stop
+TimeoutStartSec=30
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
+EOM
+
+sudo tee /etc/systemd/system/airplay-to-usb.service >/dev/null <<EOM
+[Unit]
+Description=AirPlay PCM to rolling MP3 files on emulated USB drive
+After=shairport-sync.service pi-usb-gadget.service
+Requires=shairport-sync.service pi-usb-gadget.service
+
+[Service]
+Type=simple
+ExecStart=$REPO_DIR/scripts/airplay_to_usb.sh
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+EOM
+
+log "Enabling services"
+sudo systemctl daemon-reload
+sudo systemctl enable shairport-sync pi-usb-gadget.service airplay-to-usb.service
+
+log "Restarting shairport-sync now (gadget services will come up after reboot)"
 sudo systemctl restart shairport-sync
 
-cat <<'EOM'
+cat <<EOM
 
 Install complete.
 
-Next steps after reboot:
-  1) sudo ~/pi-usb-airplay-prototype/scripts/setup_usb_gadget.sh start
-  2) ~/pi-usb-airplay-prototype/scripts/airplay_to_usb.sh
+Services enabled:
+  - shairport-sync
+  - pi-usb-gadget.service
+  - airplay-to-usb.service
 
 Reboot required for dwc2/cmdline changes to take effect.
 EOM
+
+if [[ "$AUTO_REBOOT" == "1" ]]; then
+  log "Rebooting in 5 seconds..."
+  sleep 5
+  sudo reboot
+else
+  log "AUTO_REBOOT=0 set, skipping reboot."
+fi

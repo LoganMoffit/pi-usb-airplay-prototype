@@ -8,27 +8,29 @@ This is a **hacky prototype** for Raspberry Pi Zero/Zero 2 W:
 
 It is meant to test whether your amp firmware can handle changing files while playing.
 
-## Quick install (after repo is on GitHub)
+## One-command install (after repo is on GitHub)
 
 SSH into Pi and run:
 
 ```bash
-git clone <REPO_URL> ~/pi-usb-airplay-prototype
-bash ~/pi-usb-airplay-prototype/install.sh
-sudo reboot
-```
-
-After reboot:
-
-```bash
-sudo ~/pi-usb-airplay-prototype/scripts/setup_usb_gadget.sh start
-~/pi-usb-airplay-prototype/scripts/airplay_to_usb.sh
-```
-
-Or use bootstrap helper:
-
-```bash
 bash -c "$(curl -fsSL <RAW_BOOTSTRAP_URL>)" -- <REPO_URL>
+```
+
+This installs dependencies, configures USB gadget boot settings, installs systemd services,
+and reboots automatically.
+
+After reboot, it should run automatically. Check status with:
+
+```bash
+systemctl status shairport-sync
+systemctl status pi-usb-gadget.service
+systemctl status airplay-to-usb.service
+```
+
+Concrete example:
+
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/LoganMoffit/pi-usb-airplay-prototype/main/bootstrap.sh)" -- https://github.com/LoganMoffit/pi-usb-airplay-prototype.git
 ```
 
 ## Important limits
